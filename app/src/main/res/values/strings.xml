@@ -13,4 +13,7 @@
     <string name="spotify_country_param" translatable = "false">country</string>
     <string name="spotify_country_value" translatable = "false">US</string>
     <string name="no_internet">Can\'t load search results. Check internet connection and try again.</string>
+    <string name="title_activity_music_play_acitvity">MusicPlayAcitvity</string>
+    <string name="tracklist_key">Track List Key</string>
+    <string name="track_position">track position</string>
 </resources>

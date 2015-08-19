@@ -2,12 +2,14 @@ package com.example.android.spotifystreamer;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -39,6 +41,8 @@ public class TopTracksActivityFragment extends Fragment {
 
     public SpotifyApi spotifyApi;
     public SpotifyService spotifyService;
+
+
 
     public TopTracksActivityFragment() {
         //  initialize tracklist
@@ -76,6 +80,20 @@ public class TopTracksActivityFragment extends Fragment {
         //set adapter to list view
         topTracksListView.setAdapter(topTracksAdapter);
 
+        //set on item click listener
+        topTracksListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // get list of track name , album name, artist name, track image url, preview_url
+
+                Intent musicPlayIntent = new Intent(getActivity(), MusicPlayAcitvity.class);
+
+                musicPlayIntent.putParcelableArrayListExtra(getString(R.string.tracklist_key), (ArrayList<? extends Parcelable>) trackList);
+                musicPlayIntent.putExtra(getString(R.string.track_position),position);
+                startActivity(musicPlayIntent);
+
+            }
+        });
 
         return rootView;
     }
@@ -85,6 +103,7 @@ public class TopTracksActivityFragment extends Fragment {
         private static final int MAX_TOP_TRACKS_LIMIT = 10;
         private final String LOG_TAG = FetchTopTracksTask.class.getSimpleName();
         private Tracks spotifyTopTrackList;
+
         private Map<String, Object> options;
         private List<Track> newTrackList = new ArrayList<Track>();
 
@@ -102,6 +121,8 @@ public class TopTracksActivityFragment extends Fragment {
                         String albumName;
                         String albumThumbnailLink;
                         String trackName;
+                        String artistName;
+                        String preview_url;
 
                         kaaes.spotify.webapi.android.models.Track currentTrack;
                         trackList.clear();
@@ -112,8 +133,10 @@ public class TopTracksActivityFragment extends Fragment {
                                 if (null != currentTrack.album.images && !currentTrack.album.images.isEmpty()) {
                                     albumThumbnailLink = currentTrack.album.images.get(0).url;
                                     trackName = currentTrack.name;
+                                    artistName = currentTrack.artists.get(0).name;
+                                    preview_url = currentTrack.preview_url;
 
-                                    newTrackList.add(new Track.Builder().trackName(trackName).albumName(albumName).albumThumbnailLink(albumThumbnailLink).build());
+                                    newTrackList.add(new Track.Builder().trackName(trackName).albumName(albumName).albumThumbnailLink(albumThumbnailLink).artistName(artistName).previewURL(artistName).build());
                                 }
 
 
