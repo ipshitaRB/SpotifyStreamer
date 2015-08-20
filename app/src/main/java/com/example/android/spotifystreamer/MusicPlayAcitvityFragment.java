@@ -1,18 +1,20 @@
 package com.example.android.spotifystreamer;
 
 import android.content.Intent;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.android.spotifystreamer.R;
 import com.example.android.spotifystreamer.models.Track;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,6 +31,7 @@ public class MusicPlayAcitvityFragment extends Fragment {
 
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +40,14 @@ public class MusicPlayAcitvityFragment extends Fragment {
         Intent intent = getActivity().getIntent();
         trackList = intent.getParcelableArrayListExtra(getString(R.string.tracklist_key));
         currentTrackPosition = intent.getIntExtra(getString(R.string.track_position),-1);
+        // start music player Service
+        Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
+        // pass the entire top track list and position
+        startServiceIntent.putParcelableArrayListExtra(getString(R.string.tracklist_key), (ArrayList<? extends Parcelable>) trackList);
+        startServiceIntent.putExtra(getString(R.string.track_position), currentTrackPosition);
+        // set action play
+        startServiceIntent.setAction(MusicPlayerService.ACTION_PLAY);
+        getActivity().startService(startServiceIntent);
 
 
     }
@@ -59,6 +70,14 @@ public class MusicPlayAcitvityFragment extends Fragment {
         if (null != currentTrack.getAlbumThumbnailLink() && !currentTrack.getAlbumThumbnailLink().isEmpty())
             Picasso.with(getActivity()).load(currentTrack.getAlbumThumbnailLink()).resize(IMAGE_WIDTH, IMAGE_HEIGHT).centerCrop().into(albumThumbnailImageView);
 
+        ImageButton playPauseButton = (ImageButton) rootView.findViewById(R.id.play_pause_button);
+
+        playPauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
         // initialize album name textview
         // initialize trackname
         // initialize image view
@@ -66,4 +85,6 @@ public class MusicPlayAcitvityFragment extends Fragment {
         return rootView;
 
     }
+
+
 }

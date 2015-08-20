@@ -2,9 +2,9 @@ package com.example.android.spotifystreamer;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -136,7 +136,7 @@ public class TopTracksActivityFragment extends Fragment {
                                     artistName = currentTrack.artists.get(0).name;
                                     preview_url = currentTrack.preview_url;
 
-                                    newTrackList.add(new Track.Builder().trackName(trackName).albumName(albumName).albumThumbnailLink(albumThumbnailLink).artistName(artistName).previewURL(artistName).build());
+                                    newTrackList.add(new Track.Builder().trackName(trackName).albumName(albumName).albumThumbnailLink(albumThumbnailLink).artistName(artistName).previewURL(preview_url).build());
                                 }
 
 
