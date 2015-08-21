@@ -10,4 +10,5 @@
     <dimen name="single_line_listview_bottom_padding">8dp</dimen>
     <dimen name="two_line_list_item_tile_height">72dp</dimen>
     <dimen name="two_line_list_item_thumnail_left_padding">16dp</dimen>
+    <dimen name="notification_margin">16dp</dimen>
 </resources>

@@ -26,6 +26,8 @@ public class MusicPlayAcitvityFragment extends Fragment {
     private static final int IMAGE_HEIGHT = 800;
     public List<Track> trackList;
     public int currentTrackPosition;
+    private boolean isPlaying = false;
+
     public MusicPlayAcitvityFragment() {
 
 
@@ -47,7 +49,9 @@ public class MusicPlayAcitvityFragment extends Fragment {
         startServiceIntent.putExtra(getString(R.string.track_position), currentTrackPosition);
         // set action play
         startServiceIntent.setAction(MusicPlayerService.ACTION_PLAY);
+
         getActivity().startService(startServiceIntent);
+        isPlaying = true;
 
 
     }
@@ -70,12 +74,18 @@ public class MusicPlayAcitvityFragment extends Fragment {
         if (null != currentTrack.getAlbumThumbnailLink() && !currentTrack.getAlbumThumbnailLink().isEmpty())
             Picasso.with(getActivity()).load(currentTrack.getAlbumThumbnailLink()).resize(IMAGE_WIDTH, IMAGE_HEIGHT).centerCrop().into(albumThumbnailImageView);
 
-        ImageButton playPauseButton = (ImageButton) rootView.findViewById(R.id.play_pause_button);
+        final ImageButton playPauseButton = (ImageButton) rootView.findViewById(R.id.play_pause_button);
 
         playPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                if (isPlaying) {
+                    playPauseButton.setImageResource(android.R.drawable.ic_media_pause);
+                    isPlaying = false;
+                } else {
+                    playPauseButton.setImageResource(android.R.drawable.ic_media_play);
+                    isPlaying = true;
+                }
             }
         });
         // initialize album name textview
