@@ -7,12 +7,14 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import com.example.android.spotifystreamer.models.Track;
 import com.squareup.picasso.Picasso;
@@ -31,6 +33,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     public static final String ACTION_NEXT = "com.example.action.NEXT";
     private static final int NOTIFICATION_ID = 146;
     private static final String LOG_TAG = MusicPlayerService.class.getSimpleName();
+    private static final int IMAGE_SIZE = 40;
     MediaPlayer mediaPlayer = null;
     ArrayList<Track> tracks = null;
     String url = "";
@@ -44,6 +47,8 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     private NotificationCompat.Action pausePlayAction;
     private NotificationCompat.Action nextAction;
     private NotificationCompat.Action previousAction;
+    private RemoteViews remoteView;
+    private NotificationManager nManager;
 
     public MusicPlayerService() {
         mediaPlayer = new MediaPlayer(); // initialize it here
@@ -80,7 +85,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
             // TODO check if a different song was playing
             position = intent.getIntExtra(getString(R.string.track_position), -1);
 
-            if (position > 0) {
+            if (position > -1) {
 
                 tracks = intent.getParcelableArrayListExtra(getString(R.string.tracklist_key));
 
@@ -109,13 +114,42 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 // build notification
                 Bitmap icon = BitmapFactory.decodeResource(getResources(),
                         android.R.drawable.ic_btn_speak_now);
-
+                remoteView = new RemoteViews(getPackageName(), R.layout.service_music_player_notification);
 
                 // TODO check visibility from shared preference;
-                notificationLockScreenVisibility = Notification.VISIBILITY_SECRET;
+                notificationLockScreenVisibility = Notification.VISIBILITY_PUBLIC;
+                nManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                builder = new NotificationCompat.Builder(this);
+                builder.setTicker(SpotifyService.class.getSimpleName())
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setContentIntent(pendingIntent)
+                        .setContent(remoteView)
+                        .setOngoing(true)
+                        .setVisibility(notificationLockScreenVisibility);
+                notification = builder.build();
+                startForeground(NOTIFICATION_ID,
+                        notification);
+                remoteView.setTextViewText(R.id.track_name_textview, trackName);
+                Handler uiHandler = new Handler(Looper.getMainLooper());
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Picasso
+                                .with(MusicPlayerService.this)
+                                .load(currentTrack.getAlbumThumbnailLink())
+                                .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
+                    }
+                });
+                remoteView.setOnClickPendingIntent(R.id.prev_imagebutton, pendingPreviousIntent);
+                remoteView.setOnClickPendingIntent(R.id.play_pause_imagebutton, pendingPlayIntent);
+                remoteView.setOnClickPendingIntent(R.id.next_imagebutton, pendingNextIntent);
 
 
-                pausePlayAction = new NotificationCompat.Action(android.R.drawable.ic_media_pause, "",
+
+
+
+
+                /*pausePlayAction = new NotificationCompat.Action(android.R.drawable.ic_media_pause, "",
                         pendingPlayIntent);
                 nextAction = new NotificationCompat.Action(android.R.drawable.ic_media_next, "",
                         pendingNextIntent);
@@ -156,7 +190,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 };
 
                 Picasso.with(this).load(currentTrack.getAlbumThumbnailLink()).into(target);
-
+*/
             }
         } else if (intent.getAction().equals(ACTION_PREV)) {
 
@@ -170,24 +204,32 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 currentTrack = tracks.get(position);
                 String url = currentTrack.getPreviewURL();
                 playMedia(url);
+                Handler uiHandler = new Handler(Looper.getMainLooper());
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Picasso
+                                .with(MusicPlayerService.this)
+                                .load(currentTrack.getAlbumThumbnailLink())
+                                .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
+                    }
+                });
 
-                // update track name
-                builder.setContentTitle(currentTrack.getTrackName());
-                // update album image
-                Picasso.with(this).load(currentTrack.getAlbumThumbnailLink()).into(target);
+                remoteView.setTextViewText(R.id.track_name_textview, currentTrack.getTrackName());
             }
 
         } else if (intent.getAction().equals(ACTION_PLAY_PAUSE)) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
-
+                remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_play);
+                nManager.notify(NOTIFICATION_ID, notification);
 
             } else {
                 mediaPlayer.start();
-                builder.addAction(android.R.drawable.ic_media_play, "",
-                        pendingPlayIntent);
+                remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_pause);
+                nManager.notify(NOTIFICATION_ID, notification);
             }
-            //TODO pause play image switch
+            //TODO change play pause and track details only after music plays
 
             Log.i(LOG_TAG, "Clicked Play");
         } else if (intent.getAction().equals(ACTION_NEXT)) {
@@ -201,12 +243,19 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 currentTrack = tracks.get(position);
                 String url = currentTrack.getPreviewURL();
                 playMedia(url);
+                Handler uiHandler = new Handler(Looper.getMainLooper());
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Picasso
+                                .with(MusicPlayerService.this)
+                                .load(currentTrack.getAlbumThumbnailLink())
+                                .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
+                    }
+                });
 
+                remoteView.setTextViewText(R.id.track_name_textview, currentTrack.getTrackName());
 
-                // update track name
-                builder.setContentTitle(currentTrack.getTrackName());
-                // update album image
-                Picasso.with(this).load(currentTrack.getAlbumThumbnailLink()).into(target);
             }
 
         }

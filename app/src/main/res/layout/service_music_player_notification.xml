@@ -2,28 +2,35 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:background="@color/background_material_dark"
+    android:orientation="horizontal"
+    android:weightSum="1">
 
     <ImageView
         android:id="@+id/album_thumbnail_imageview"
-        android:layout_width="wrap_content"
+        android:layout_width="@dimen/notification_image_size"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/notification_margin"
+        android:layout_marginLeft="@dimen/notification_margin"
+        android:layout_marginTop="@dimen/notification_margin"
+        android:layout_weight="0.25"
         android:src="@android:drawable/ic_media_play" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/track_name_textview"
+            style="@style/single_line_list_item_text_style"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/notification_margin"
             android:layout_marginTop="@dimen/notification_margin"
             android:text="Large Text"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="@color/abc_primary_text_material_dark" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -32,21 +39,21 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/prev_imagebutton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:src="@android:drawable/ic_media_previous" />
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/play_pause_imagebutton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:src="@android:drawable/ic_media_pause" />
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/next_imagebutton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
