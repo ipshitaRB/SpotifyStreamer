@@ -28,8 +28,8 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     public static final String ACTION_PLAY = "com.example.action.PLAY";
     public static final String ACTION_PLAY_PAUSE = "com.example.action.PLAY_PAUSE";
     public static final String ACTION_PREV = "com.example.action.PREVIOUS";
+    public static final String ACTION_NEXT = "com.example.action.NEXT";
     private static final int NOTIFICATION_ID = 146;
-    private static final String ACTION_NEXT = "com.example.action.NEXT";
     private static final String LOG_TAG = MusicPlayerService.class.getSimpleName();
     MediaPlayer mediaPlayer = null;
     ArrayList<Track> tracks = null;
@@ -180,11 +180,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
         } else if (intent.getAction().equals(ACTION_PLAY_PAUSE)) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
-                builder.mActions.clear();
-                builder.addAction(previousAction);
-                pausePlayAction.icon = android.R.drawable.ic_media_play;
-                builder.addAction(pausePlayAction);
-                builder.addAction(nextAction);
+
 
             } else {
                 mediaPlayer.start();

@@ -73,6 +73,10 @@ public class MusicPlayAcitvityFragment extends Fragment {
         trackNameTextView.setText(currentTrack.getTrackName());
         if (null != currentTrack.getAlbumThumbnailLink() && !currentTrack.getAlbumThumbnailLink().isEmpty())
             Picasso.with(getActivity()).load(currentTrack.getAlbumThumbnailLink()).resize(IMAGE_WIDTH, IMAGE_HEIGHT).centerCrop().into(albumThumbnailImageView);
+        // TODO seekbar update
+        // TODO image and textview update on previous and next track
+        // TODO get track and seekbar position everytime this activity is started.
+        // TODO orientation change checks
 
         final ImageButton playPauseButton = (ImageButton) rootView.findViewById(R.id.play_pause_button);
 
@@ -82,12 +86,49 @@ public class MusicPlayAcitvityFragment extends Fragment {
                 if (isPlaying) {
                     playPauseButton.setImageResource(android.R.drawable.ic_media_pause);
                     isPlaying = false;
+
+
                 } else {
                     playPauseButton.setImageResource(android.R.drawable.ic_media_play);
                     isPlaying = true;
                 }
+                // start music player Service
+                Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
+                // set action play
+                startServiceIntent.setAction(MusicPlayerService.ACTION_PLAY_PAUSE);
+                getActivity().startService(startServiceIntent);
             }
         });
+
+        final ImageButton previousButton = (ImageButton) rootView.findViewById(R.id.prev_button);
+
+        previousButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // start music player Service
+                Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
+                // set action play
+                startServiceIntent.setAction(MusicPlayerService.ACTION_PREV);
+                getActivity().startService(startServiceIntent);
+            }
+        });
+
+        final ImageButton nextButton = (ImageButton) rootView.findViewById(R.id.next_button);
+
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                // start music player Service
+                Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
+                // set action play
+                startServiceIntent.setAction(MusicPlayerService.ACTION_NEXT);
+                getActivity().startService(startServiceIntent);
+            }
+        });
+
+
         // initialize album name textview
         // initialize trackname
         // initialize image view
