@@ -16,4 +16,8 @@
     <string name="title_activity_music_play_acitvity">MusicPlayAcitvity</string>
     <string name="tracklist_key">Track List Key</string>
     <string name="track_position">track position</string>
+    <string name="seekbar_progress_position">seekbar progress</string>
+    <string name="player_broadcast">player broadcast</string>
+    <string name="player_broadcast_action">player broadcast action</string>
+    <string name="colon">:</string>
 </resources>

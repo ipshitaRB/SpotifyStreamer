@@ -5,8 +5,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
@@ -31,9 +29,14 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     public static final String ACTION_PLAY_PAUSE = "com.example.action.PLAY_PAUSE";
     public static final String ACTION_PREV = "com.example.action.PREVIOUS";
     public static final String ACTION_NEXT = "com.example.action.NEXT";
+    public static final String ACTION_SEEKBAR_CHANGED = "com.example.action.SEEK";
+    public static final String ACTION_DURATION = "com.example.action.DURATION";
+    public static final String ACTION_REQUEST_TIME_POSITION = "com.example.action.REQUEST_CURRENT_POSITION";
+    public static final String ACTION_FRAGMENT_RESUMED = "com.example.action.RESUMED";
     private static final int NOTIFICATION_ID = 146;
     private static final String LOG_TAG = MusicPlayerService.class.getSimpleName();
     private static final int IMAGE_SIZE = 40;
+    private static OnNotificationEventListener listener;
     MediaPlayer mediaPlayer = null;
     ArrayList<Track> tracks = null;
     String url = "";
@@ -55,8 +58,13 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
         tracks = new ArrayList<>();
     }
 
+    public static void registerOnNotificationEventListener(OnNotificationEventListener onNotificationEventListener) {
+        listener = onNotificationEventListener;
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
 
         // create all intents
         Intent notificationIntent = new Intent(this, MusicPlayAcitvity.class);
@@ -81,7 +89,14 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
         PendingIntent pendingNextIntent = PendingIntent.getService(this, 0,
                 nextIntent, 0);
 
-        if (intent.getAction().equals(ACTION_PLAY)) {
+        Intent seekIntent = new Intent(this, MusicPlayerService.class);
+        seekIntent.setAction(ACTION_NEXT);
+
+        PendingIntent pendingSeekIntent = PendingIntent.getService(this, 0,
+                seekIntent, 0);
+
+        // check intent action
+        if (null != intent.getAction() && intent.getAction().equals(ACTION_PLAY)) {
             // TODO check if a different song was playing
             position = intent.getIntExtra(getString(R.string.track_position), -1);
 
@@ -90,12 +105,14 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 tracks = intent.getParcelableArrayListExtra(getString(R.string.tracklist_key));
 
                 if (null != tracks && tracks.size() > 0 && null != tracks.get(position)) {
+
                     currentTrack = tracks.get(position);
                     url = tracks.get(position).getPreviewURL();
                     trackName = tracks.get(position).getTrackName();
 
                 }
 
+                // get media player ready
                 mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 try {
                     if (!url.isEmpty())
@@ -107,13 +124,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 mediaPlayer.setOnCompletionListener(this);
                 mediaPlayer.prepareAsync();// prepare async to not block main thread
                 playMedia(url);
-
-
-                // TODO seekbar intent
-
                 // build notification
-                Bitmap icon = BitmapFactory.decodeResource(getResources(),
-                        android.R.drawable.ic_btn_speak_now);
                 remoteView = new RemoteViews(getPackageName(), R.layout.service_music_player_notification);
 
                 // TODO check visibility from shared preference;
@@ -129,74 +140,20 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 notification = builder.build();
                 startForeground(NOTIFICATION_ID,
                         notification);
-                remoteView.setTextViewText(R.id.track_name_textview, trackName);
-                Handler uiHandler = new Handler(Looper.getMainLooper());
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Picasso
-                                .with(MusicPlayerService.this)
-                                .load(currentTrack.getAlbumThumbnailLink())
-                                .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
-                    }
-                });
+
                 remoteView.setOnClickPendingIntent(R.id.prev_imagebutton, pendingPreviousIntent);
                 remoteView.setOnClickPendingIntent(R.id.play_pause_imagebutton, pendingPlayIntent);
                 remoteView.setOnClickPendingIntent(R.id.next_imagebutton, pendingNextIntent);
 
-
-
-
-
-
-                /*pausePlayAction = new NotificationCompat.Action(android.R.drawable.ic_media_pause, "",
-                        pendingPlayIntent);
-                nextAction = new NotificationCompat.Action(android.R.drawable.ic_media_next, "",
-                        pendingNextIntent);
-                previousAction = new NotificationCompat.Action(android.R.drawable.ic_media_previous,
-                        "", pendingPreviousIntent);
-                builder = new NotificationCompat.Builder(this);
-                builder.setContentTitle(trackName)
-                        .setTicker(SpotifyService.class.getSimpleName())
-                        .setSmallIcon(R.drawable.ic_launcher)
-                        .setLargeIcon(
-                                Bitmap.createScaledBitmap(icon, 128, 128, false))
-                        .setContentIntent(pendingIntent)
-                        .setOngoing(true)
-                        .setVisibility(notificationLockScreenVisibility)
-                        .addAction(previousAction)
-                        .addAction(pausePlayAction)
-                        .addAction(nextAction);//.build();
-                startForeground(NOTIFICATION_ID,
-                        builder.build());
-                // mTarget should an instance variable of your class so it doesn't get GC'ed
-                target = new Target() {
-                    @Override
-                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                        builder.setLargeIcon(bitmap)
-                                .setDefaults(Notification.DEFAULT_ALL);
-                        // send the notification again to update it w/ the right image
-                        ((NotificationManager) (getSystemService(NOTIFICATION_SERVICE)))
-                                .notify(NOTIFICATION_ID, builder.build());
-                    }
-
-                    @Override
-                    public void onBitmapFailed(Drawable errorDrawable) {
-                    }
-
-                    @Override
-                    public void onPrepareLoad(Drawable placeHolderDrawable) {
-                    }
-                };
-
-                Picasso.with(this).load(currentTrack.getAlbumThumbnailLink()).into(target);
-*/
             }
-        } else if (intent.getAction().equals(ACTION_PREV)) {
+        } else if (null != intent.getAction() && intent.getAction().equals(ACTION_PREV)) {
 
             Log.i(LOG_TAG, "Clicked Previous");
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.stop();
+                remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_play);
+                nManager.notify(NOTIFICATION_ID, notification);
+
             }
 
             // update current track and play it
@@ -204,65 +161,64 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 currentTrack = tracks.get(position);
                 String url = currentTrack.getPreviewURL();
                 playMedia(url);
-                Handler uiHandler = new Handler(Looper.getMainLooper());
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Picasso
-                                .with(MusicPlayerService.this)
-                                .load(currentTrack.getAlbumThumbnailLink())
-                                .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
-                    }
-                });
+                listener.previousClicked();
+                listener.getTrackNumber(position);
 
-                remoteView.setTextViewText(R.id.track_name_textview, currentTrack.getTrackName());
             }
 
-        } else if (intent.getAction().equals(ACTION_PLAY_PAUSE)) {
+        } else if (null != intent.getAction() && intent.getAction().equals(ACTION_PLAY_PAUSE)) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
+                listener.onMusicPaused();
                 remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_play);
                 nManager.notify(NOTIFICATION_ID, notification);
 
             } else {
+
                 mediaPlayer.start();
+                listener.onMusicResumed();
                 remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_pause);
                 nManager.notify(NOTIFICATION_ID, notification);
             }
-            //TODO change play pause and track details only after music plays
+
 
             Log.i(LOG_TAG, "Clicked Play");
-        } else if (intent.getAction().equals(ACTION_NEXT)) {
+        } else if (null != intent.getAction() && intent.getAction().equals(ACTION_NEXT)) {
             Log.i(LOG_TAG, "Clicked Next");
 
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.stop();
+                remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_play);
+                nManager.notify(NOTIFICATION_ID, notification);
             }
             if (null != tracks && tracks.size() > 0 && position++ < tracks.size() && null != tracks.get(position)) {
 
                 currentTrack = tracks.get(position);
                 String url = currentTrack.getPreviewURL();
                 playMedia(url);
-                Handler uiHandler = new Handler(Looper.getMainLooper());
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Picasso
-                                .with(MusicPlayerService.this)
-                                .load(currentTrack.getAlbumThumbnailLink())
-                                .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
-                    }
-                });
+                listener.nextClicked();
+                listener.getTrackNumber(position);
 
-                remoteView.setTextViewText(R.id.track_name_textview, currentTrack.getTrackName());
 
             }
 
+        } else if (null != intent.getAction() && intent.getAction().equals(ACTION_SEEKBAR_CHANGED)) {
+            int seekBarProgress = intent.getIntExtra(getString(R.string.seekbar_progress_position), -1);
+
+            mediaPlayer.seekTo(seekBarProgress);
+            mediaPlayer.start();
+        } else if (null != intent.getAction() && intent.getAction().equals(ACTION_REQUEST_TIME_POSITION)) {
+            listener.setCurrentTrackTimePosition(mediaPlayer.getCurrentPosition());
+        } else if (null != intent.getAction() && intent.getAction().equals(ACTION_FRAGMENT_RESUMED)) {
+            listener.getTrackNumber(tracks.indexOf(currentTrack));
+            if (!mediaPlayer.isPlaying()) {
+                listener.onMusicPaused();
+            }
+            listener.setCurrentTrackTimePosition(mediaPlayer.getCurrentPosition());
         }
 
         return super.onStartCommand(intent, flags, startId);
     }
-
 
     private void playMedia(String url) {
         mediaPlayer.reset();
@@ -278,27 +234,68 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
+
         return null;
     }
-
 
     @Override
     public void onPrepared(MediaPlayer mp) {
 
         mediaPlayer.start();
+        listener.getDuration(mediaPlayer.getDuration());
+        listener.onMusicStarted();
+        remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_pause);
+        remoteView.setTextViewText(R.id.track_name_textview, currentTrack.getTrackName());
+        //nManager.notify(NOTIFICATION_ID, notification);
+        Handler uiHandler = new Handler(Looper.getMainLooper());
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                Picasso
+                        .with(MusicPlayerService.this)
+                        .load(currentTrack.getAlbumThumbnailLink())
+                        .into(remoteView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notification);
+            }
+        });
 
 
-        // TODO send message to fragment that music has started playing
+        // TODO add error listener . to stop seekbar from advancing
     }
 
     @Override
     public void onCompletion(MediaPlayer mp) {
+        listener.onTrackCompleted();
+        stopForeground(true);
+
+    }
+
+    @Override
+    public void onDestroy() {
         if (null != mediaPlayer)
             mediaPlayer.release();
         mediaPlayer = null;
-        stopForeground(true);
+        listener = null;
+        super.onDestroy();
     }
 
+    public interface OnNotificationEventListener {
+        void getDuration(int duration);
 
+        void nextClicked();
+
+        void previousClicked();
+
+        void onMusicPaused();
+
+        void onMusicStarted();
+
+        void onMusicResumed();
+
+        void setCurrentTrackTimePosition(int position);
+
+        void onTrackCompleted();
+
+        void getTrackNumber(int trackNumber);
+
+    }
 }
