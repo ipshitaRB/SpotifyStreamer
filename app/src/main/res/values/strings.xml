@@ -20,4 +20,5 @@
     <string name="player_broadcast">player broadcast</string>
     <string name="player_broadcast_action">player broadcast action</string>
     <string name="colon">:</string>
+    <string name="tracklist_parcel_key">tracklist parcel key</string>
 </resources>

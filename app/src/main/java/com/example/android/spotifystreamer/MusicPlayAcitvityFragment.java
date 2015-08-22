@@ -51,22 +51,33 @@ public class MusicPlayAcitvityFragment extends Fragment implements MusicPlayerSe
 
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(getString(R.string.tracklist_parcel_key), (ArrayList<? extends Parcelable>) trackList);
+        super.onSaveInstanceState(outState);
+    }
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         MusicPlayerService.registerOnNotificationEventListener(this);
-        // get artist name from previous intent
-        Intent intent = getActivity().getIntent();
-        trackList = intent.getParcelableArrayListExtra(getString(R.string.tracklist_key));
-        currentTrackPosition = intent.getIntExtra(getString(R.string.track_position), -1);
+        if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.tracklist_parcel_key))) {
+            // get artist name from previous intent
+            Intent intent = getActivity().getIntent();
+            trackList = intent.getParcelableArrayListExtra(getString(R.string.tracklist_key));
+            currentTrackPosition = intent.getIntExtra(getString(R.string.track_position), -1);
 // start music player Service
-        Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
-        // pass the entire top track list and position
-        startServiceIntent.putParcelableArrayListExtra(getString(R.string.tracklist_key), (ArrayList<? extends Parcelable>) trackList);
-        startServiceIntent.putExtra(getString(R.string.track_position), currentTrackPosition);
-        // set action play
-        startServiceIntent.setAction(MusicPlayerService.ACTION_PLAY);
+            Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
+            // pass the entire top track list and position
+            startServiceIntent.putParcelableArrayListExtra(getString(R.string.tracklist_key), (ArrayList<? extends Parcelable>) trackList);
+            startServiceIntent.putExtra(getString(R.string.track_position), currentTrackPosition);
+            // set action play
+            startServiceIntent.setAction(MusicPlayerService.ACTION_PLAY);
 
-        getActivity().startService(startServiceIntent);
+            getActivity().startService(startServiceIntent);
+        } else {
+            trackList = savedInstanceState.getParcelableArrayList(getString(R.string.tracklist_parcel_key));
+
+        }
+
 
 
     }
@@ -77,7 +88,8 @@ public class MusicPlayAcitvityFragment extends Fragment implements MusicPlayerSe
 
 
         View rootView = inflater.inflate(R.layout.fragment_music_play_acitvity, container, false);
-        currentTrack = trackList.get(currentTrackPosition);
+        if (null != trackList && trackList.size() > 0)
+            currentTrack = trackList.get(currentTrackPosition);
 
         artistNameTextView = (TextView) rootView.findViewById(R.id.artist_name_textview);
 
@@ -240,38 +252,7 @@ public class MusicPlayAcitvityFragment extends Fragment implements MusicPlayerSe
         isPlaying = true;
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
 
-
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        // start music player Service
-        Intent startServiceIntent = new Intent(getActivity(), MusicPlayerService.class);
-        startServiceIntent.putExtra(getString(R.string.seekbar_progress_position), seekBar.getProgress());
-        // set action play
-        startServiceIntent.setAction(MusicPlayerService.ACTION_FRAGMENT_RESUMED);
-        getActivity().startService(startServiceIntent);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-    }
 
 
     @Override
@@ -307,8 +288,11 @@ public class MusicPlayAcitvityFragment extends Fragment implements MusicPlayerSe
                 try {
                     Thread.sleep(SEEK_BAR_UPDATE_INTERVAL);
                     // set action play
-                    startServiceIntent.setAction(MusicPlayerService.ACTION_REQUEST_TIME_POSITION);
-                    getActivity().startService(startServiceIntent);
+                    if (null != startServiceIntent) {
+                        startServiceIntent.setAction(MusicPlayerService.ACTION_REQUEST_TIME_POSITION);
+                        if (null != getActivity())
+                            getActivity().startService(startServiceIntent);
+                    }
                 } catch (InterruptedException e) {
 
                     e.printStackTrace();
