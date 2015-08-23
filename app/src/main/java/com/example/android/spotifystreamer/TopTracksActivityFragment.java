@@ -52,18 +52,32 @@ public class TopTracksActivityFragment extends Fragment {
 
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // get artist name from previous intent
-        Intent intent = getActivity().getIntent();
-        artistSpotifyId = intent.getStringExtra(Intent.EXTRA_TEXT);
-        artistName = intent.getStringExtra(getString(R.string.artist_name_key));
+
+        if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.top_track_parccel_key))) {
+            // get artist name from previous intent
+            Intent intent = getActivity().getIntent();
+            artistSpotifyId = intent.getStringExtra(Intent.EXTRA_TEXT);
+            artistName = intent.getStringExtra(getString(R.string.artist_name_key));
 
 
+            //get top tracks of the artist in an asynctask using spotify api
+            new FetchTopTracksTask().execute(artistSpotifyId);
 
-        //get top tracks of the artist in an asynctask using spotify api
-        new FetchTopTracksTask().execute(artistSpotifyId);
+        } else {
+            trackList = savedInstanceState.getParcelableArrayList(getString(R.string.top_track_parccel_key));
+
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(getString(R.string.top_track_parccel_key), (ArrayList<? extends Parcelable>) trackList);
+
+        super.onSaveInstanceState(outState);
     }
 
     @Override

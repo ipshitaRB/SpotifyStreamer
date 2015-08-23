@@ -16,7 +16,6 @@ import android.widget.RemoteViews;
 
 import com.example.android.spotifystreamer.models.Track;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,16 +44,14 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     private Notification notification;
     private int notificationLockScreenVisibility;
     private Track currentTrack;
-    private Target target;
     private NotificationCompat.Builder builder;
-    private NotificationCompat.Action pausePlayAction;
-    private NotificationCompat.Action nextAction;
-    private NotificationCompat.Action previousAction;
     private RemoteViews remoteView;
     private NotificationManager nManager;
+    private boolean isPaused = false;
+    private int seekbarPosition;
 
     public MusicPlayerService() {
-        mediaPlayer = new MediaPlayer(); // initialize it here
+
         tracks = new ArrayList<>();
     }
 
@@ -110,23 +107,33 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                     if (null != tracks && tracks.size() > 0 && null != tracks.get(position)) {
 
                         currentTrack = tracks.get(position);
+
                         url = tracks.get(position).getPreviewURL();
                         trackName = tracks.get(position).getTrackName();
 
                     }
-
+                    mediaPlayer = new MediaPlayer(); // initialize it here
                     // get media player ready
                     mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     try {
-                        if (!url.isEmpty())
+                        if (!url.isEmpty()) {
+                            if (mediaPlayer.isPlaying()) {
+                                mediaPlayer.stop();
+
+                            }
+                            mediaPlayer.reset();
                             mediaPlayer.setDataSource(url);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    seekbarPosition = intent.getIntExtra(getString(R.string.seekbar_progress_position), 0);
                     mediaPlayer.setOnPreparedListener(this);
                     mediaPlayer.setOnCompletionListener(this);
                     mediaPlayer.prepareAsync();// prepare async to not block main thread
                     playMedia(url);
+
                     // build notification
                     remoteView = new RemoteViews(getPackageName(), R.layout.service_music_player_notification);
 
@@ -173,6 +180,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_PLAY_PAUSE)) {
                 if (mediaPlayer.isPlaying()) {
                     mediaPlayer.pause();
+                    isPaused = true;
                     if (null != listener)
                         listener.onMusicPaused();
                     remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_play);
@@ -181,6 +189,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 } else {
 
                     mediaPlayer.start();
+                    isPaused = false;
                     if (null != listener)
                         listener.onMusicResumed();
                     remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_pause);
@@ -211,22 +220,19 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
 
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_SEEKBAR_CHANGED)) {
                 int seekBarProgress = intent.getIntExtra(getString(R.string.seekbar_progress_position), -1);
-
-                mediaPlayer.seekTo(seekBarProgress);
-                mediaPlayer.start();
+                if (null != mediaPlayer) {
+                    mediaPlayer.seekTo(seekBarProgress);
+                    mediaPlayer.start();
+                }
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_REQUEST_TIME_POSITION)) {
-                if (null != listener)
+                if (null != listener && null != mediaPlayer)
                     listener.setCurrentTrackTimePosition(mediaPlayer.getCurrentPosition());
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_FRAGMENT_RESUMED)) {
-                if (null != listener) {
-                    listener.getTrackNumber(tracks.indexOf(currentTrack));
+                if (null != listener && null != mediaPlayer) {
+                    listener.getCurrentState(tracks, position, mediaPlayer.getCurrentPosition(), mediaPlayer != null, isPaused, mediaPlayer.getDuration());
                 }
-                if (!mediaPlayer.isPlaying() && null != listener) {
 
-                    listener.onMusicPaused();
-                }
-                if (null != listener)
-                    listener.setCurrentTrackTimePosition(mediaPlayer.getCurrentPosition());
+
             }
         }
 
@@ -254,7 +260,9 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     @Override
     public void onPrepared(MediaPlayer mp) {
 
+        mediaPlayer.seekTo(seekbarPosition);
         mediaPlayer.start();
+
         if (null != listener) {
             listener.getDuration(mediaPlayer.getDuration());
             listener.onMusicStarted();
@@ -281,15 +289,17 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     public void onCompletion(MediaPlayer mp) {
         if (null != listener)
             listener.onTrackCompleted();
+        if (null != mediaPlayer)
+            mediaPlayer.release();
+        mediaPlayer = null;
         stopForeground(true);
+
 
     }
 
     @Override
     public void onDestroy() {
-        if (null != mediaPlayer)
-            mediaPlayer.release();
-        mediaPlayer = null;
+
         if (null != listener)
             listener = null;
         super.onDestroy();
@@ -313,6 +323,9 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
         void onTrackCompleted();
 
         void getTrackNumber(int trackNumber);
+
+        void getCurrentState(ArrayList<Track> trackList, int currentTrackNumber, int currentTimeTrackPosition, boolean isMediaPlayerON, boolean isPaused, int duration);
+
 
     }
 }

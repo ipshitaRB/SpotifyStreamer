@@ -2,6 +2,7 @@ package com.example.android.spotifystreamer;
 
 
 import android.os.Bundle;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,6 +32,9 @@ public class MusicPlayAcitvity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            return true;
+        } else if (id == android.R.id.home) {
+            NavUtils.navigateUpFromSameTask(this);
             return true;
         }
 

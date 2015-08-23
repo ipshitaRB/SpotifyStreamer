@@ -21,4 +21,9 @@
     <string name="player_broadcast_action">player broadcast action</string>
     <string name="colon">:</string>
     <string name="tracklist_parcel_key">tracklist parcel key</string>
+    <string name="action_show_now_playing">Now Playing</string>
+    <string name="top_track_parccel_key">top track parcel key</string>
+    <string name="track_number_key">track number key</string>
+    <string name="current_track_key">current track key</string>
+    <string name="view_key">view key</string>
 </resources>

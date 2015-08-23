@@ -1,9 +1,9 @@
 package com.example.android.spotifystreamer;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,7 +22,9 @@ public class TopTracksActivity extends AppCompatActivity {
         if(artistName != null){
             ab.setTitle(getString(R.string.top_tracks_title));
             ab.setSubtitle(artistName);
+
         }
+
     }
 
 
@@ -44,6 +46,13 @@ public class TopTracksActivity extends AppCompatActivity {
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
+            case R.id.action_now_playing:
+                Intent musicPlayIntent = new Intent(this, MusicPlayAcitvity.class);
+
+
+                startActivity(musicPlayIntent);
+                return true;
+
         }
         return super.onOptionsItemSelected(item);
     }
