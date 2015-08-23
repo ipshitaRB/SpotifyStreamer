@@ -26,4 +26,5 @@
     <string name="track_number_key">track number key</string>
     <string name="current_track_key">current track key</string>
     <string name="view_key">view key</string>
+    <string name="no_song_currently_playing">No song currently playing</string>
 </resources>

@@ -13,6 +13,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.android.spotifystreamer.models.Track;
 import com.squareup.picasso.Picasso;
@@ -358,6 +359,9 @@ public class MusicPlayActivityFragment extends Fragment implements MusicPlayerSe
                 this.trackDuration = duration;
                 setUIOnNowPlaying();
             }
+        } else {
+            Toast.makeText(getActivity(), getString(R.string.no_song_currently_playing), Toast.LENGTH_LONG).show();
+            getActivity().finish();
         }
     }
 

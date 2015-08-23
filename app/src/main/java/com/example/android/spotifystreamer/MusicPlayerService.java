@@ -11,7 +11,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.v7.app.NotificationCompat;
-import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.example.android.spotifystreamer.models.Track;
@@ -22,26 +21,28 @@ import java.util.ArrayList;
 
 import kaaes.spotify.webapi.android.SpotifyService;
 
-public class MusicPlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
+public class MusicPlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
     public static final String ACTION_PLAY = "com.example.action.PLAY";
     public static final String ACTION_PLAY_PAUSE = "com.example.action.PLAY_PAUSE";
     public static final String ACTION_PREV = "com.example.action.PREVIOUS";
     public static final String ACTION_NEXT = "com.example.action.NEXT";
     public static final String ACTION_SEEKBAR_CHANGED = "com.example.action.SEEK";
-    public static final String ACTION_DURATION = "com.example.action.DURATION";
     public static final String ACTION_REQUEST_TIME_POSITION = "com.example.action.REQUEST_CURRENT_POSITION";
     public static final String ACTION_FRAGMENT_RESUMED = "com.example.action.RESUMED";
     private static final int NOTIFICATION_ID = 146;
     private static final String LOG_TAG = MusicPlayerService.class.getSimpleName();
-    private static final int IMAGE_SIZE = 40;
+
     private static OnNotificationEventListener listener;
     MediaPlayer mediaPlayer = null;
     ArrayList<Track> tracks = null;
     String url = "";
     String trackName = "";
+
+    // track number
     private int position;
     private Notification notification;
+    // for the lock screen toggle switch
     private int notificationLockScreenVisibility;
     private Track currentTrack;
     private NotificationCompat.Builder builder;
@@ -62,42 +63,39 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
+        // create all intents for notification
+        Intent notificationIntent = new Intent(this, MusicPlayAcitvity.class);
+        // for set content intent in notification
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        Intent previousIntent = new Intent(this, MusicPlayerService.class);
+        previousIntent.setAction(ACTION_PREV);
+
+        PendingIntent pendingPreviousIntent = PendingIntent.getService(this, 0,
+                previousIntent, 0);
+
+        Intent playIntent = new Intent(this, MusicPlayerService.class);
+        playIntent.setAction(ACTION_PLAY_PAUSE);
+
+        PendingIntent pendingPlayIntent = PendingIntent.getService(this, 0,
+                playIntent, 0);
+
+        Intent nextIntent = new Intent(this, MusicPlayerService.class);
+        nextIntent.setAction(ACTION_NEXT);
+
+        PendingIntent pendingNextIntent = PendingIntent.getService(this, 0,
+                nextIntent, 0);
 
         if (intent != null && intent.getAction() != null) {
 
-            // create all intents
-            Intent notificationIntent = new Intent(this, MusicPlayAcitvity.class);
 
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-            Intent previousIntent = new Intent(this, MusicPlayerService.class);
-            previousIntent.setAction(ACTION_PREV);
 
-            PendingIntent pendingPreviousIntent = PendingIntent.getService(this, 0,
-                    previousIntent, 0);
-
-            Intent playIntent = new Intent(this, MusicPlayerService.class);
-            playIntent.setAction(ACTION_PLAY_PAUSE);
-
-            PendingIntent pendingPlayIntent = PendingIntent.getService(this, 0,
-                    playIntent, 0);
-
-            Intent nextIntent = new Intent(this, MusicPlayerService.class);
-            nextIntent.setAction(ACTION_NEXT);
-
-            PendingIntent pendingNextIntent = PendingIntent.getService(this, 0,
-                    nextIntent, 0);
-
-            Intent seekIntent = new Intent(this, MusicPlayerService.class);
-            seekIntent.setAction(ACTION_NEXT);
-
-            PendingIntent pendingSeekIntent = PendingIntent.getService(this, 0,
-                    seekIntent, 0);
 
 
             // check intent action
             if (null != intent && null != intent.getAction() && intent.getAction().equals(ACTION_PLAY)) {
-                // TODO check if a different song was playing
+
                 position = intent.getIntExtra(getString(R.string.track_position), -1);
 
                 if (position > -1) {
@@ -117,6 +115,8 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                     mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     try {
                         if (!url.isEmpty()) {
+
+                            // changes for now playing. otherwise it gives illegalstate exception
                             if (mediaPlayer.isPlaying()) {
                                 mediaPlayer.stop();
 
@@ -131,6 +131,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                     seekbarPosition = intent.getIntExtra(getString(R.string.seekbar_progress_position), 0);
                     mediaPlayer.setOnPreparedListener(this);
                     mediaPlayer.setOnCompletionListener(this);
+                    mediaPlayer.setOnErrorListener(this);
                     mediaPlayer.prepareAsync();// prepare async to not block main thread
                     playMedia(url);
 
@@ -158,7 +159,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 }
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_PREV)) {
 
-                Log.i(LOG_TAG, "Clicked Previous");
+
                 if (mediaPlayer.isPlaying()) {
                     mediaPlayer.stop();
                     remoteView.setImageViewResource(R.id.play_pause_imagebutton, android.R.drawable.ic_media_play);
@@ -196,10 +197,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                     nManager.notify(NOTIFICATION_ID, notification);
                 }
 
-
-                Log.i(LOG_TAG, "Clicked Play");
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_NEXT)) {
-                Log.i(LOG_TAG, "Clicked Next");
 
                 if (mediaPlayer.isPlaying()) {
                     mediaPlayer.stop();
@@ -219,7 +217,7 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 }
 
             } else if (null != intent.getAction() && intent.getAction().equals(ACTION_SEEKBAR_CHANGED)) {
-                int seekBarProgress = intent.getIntExtra(getString(R.string.seekbar_progress_position), -1);
+                int seekBarProgress = intent.getIntExtra(getString(R.string.seekbar_progress_position), 0);
                 if (null != mediaPlayer) {
                     mediaPlayer.seekTo(seekBarProgress);
                     mediaPlayer.start();
@@ -231,11 +229,8 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
                 if (null != listener && null != mediaPlayer) {
                     listener.getCurrentState(tracks, position, mediaPlayer.getCurrentPosition(), mediaPlayer != null, isPaused, mediaPlayer.getDuration());
                 }
-
-
             }
         }
-
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -253,7 +248,6 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
 
     @Override
     public IBinder onBind(Intent intent) {
-
         return null;
     }
 
@@ -281,8 +275,6 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
             }
         });
 
-
-        // TODO add error listener . to stop seekbar from advancing
     }
 
     @Override
@@ -303,6 +295,11 @@ public class MusicPlayerService extends Service implements MediaPlayer.OnPrepare
         if (null != listener)
             listener = null;
         super.onDestroy();
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mp, int what, int extra) {
+        return false;
     }
 
     public interface OnNotificationEventListener {

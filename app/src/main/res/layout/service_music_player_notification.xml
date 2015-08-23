@@ -28,7 +28,6 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="@dimen/notification_margin"
             android:layout_marginTop="@dimen/notification_margin"
-            android:text="Large Text"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:textColor="@color/abc_primary_text_material_dark" />
 
