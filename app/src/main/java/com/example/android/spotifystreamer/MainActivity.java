@@ -1,6 +1,5 @@
 package com.example.android.spotifystreamer;
 
-import android.app.Fragment;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
@@ -10,7 +9,6 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Fragment fragmentInstance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

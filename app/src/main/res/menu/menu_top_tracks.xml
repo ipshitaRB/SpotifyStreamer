@@ -7,11 +7,6 @@
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
-    <item
-        android:id="@+id/action_now_playing"
-        android:icon="@drawable/play"
-        android:title="@string/action_show_now_playing"
 
-        />
 
 </menu>
